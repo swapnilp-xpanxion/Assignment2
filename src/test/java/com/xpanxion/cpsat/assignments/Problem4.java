@@ -1,62 +1,101 @@
 package com.xpanxion.cpsat.assignments;
 
-import com.xpanxion.cpsat.configuration.Environment;
 import com.xpanxion.cpsat.driver.WebDriverUtil;
-import com.xpanxion.cpsat.pages.hometown.HomeTownPage;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import com.xpanxion.cpsat.pages.NSEIndiaPage;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.WebDriver;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import java.io.FileInputStream;
+import java.io.IOException;
 
 /*
-4) Using Junit and WebDriver, open ‘https://www.hometown.in/’ in Firefox and do the below.
-    1. Select Electronics from ‘More’ menu
-    2. From Filter, section select the color as ‘Black’
-    3. When you go to the first product image, you will see Quick View option, click on that
-    4. Assert that product name contains Black in a name.
-    5. Close the Quick view window and verify if Black is also present in Applied filters
+4) Using TestNG and WebDriver script, open https://www.nseindia.com/ in Chrome and do the below
+    a. In the Equity window enter the company name, reference image attached.
+    b. Read the following from an Excel file which has a single column having the
+    company names in it. Read the file and for every company name below
+        1. Bajaj Finserv Limited
+        2. Hindustan Unilever
+        3. Mahindra & Mahindra Limited
+        4. GAIL
+        Enter the company name in the equity text box
+    c. Click on the magnifying glass or hit enter
+    d. A new page opens up with the details of the company
+    e. Fetch and Print the following on the console
+     1. Face Value
+     2. 52 week high
+     3. 52 week low
+    f. Take screenshot of the page.
  */
 public class Problem4 {
     private WebDriver driver;
 
-    @Before
+    //Dataprovider to get company names from excel sheet
+    @DataProvider(name = "getCompanyNames")
+    public static Object[][] getCompanyNames() throws IOException {
+        FileInputStream fileInputStream = new FileInputStream("src//test//resources//NSE_Companies_TestData.xlsx");
+        XSSFWorkbook workbook = new XSSFWorkbook(fileInputStream);
+        XSSFSheet worksheet = workbook.getSheet("Sheet1");
+        XSSFRow row = worksheet.getRow(0);
+        int rownum = worksheet.getPhysicalNumberOfRows();
+        int colnum = row.getLastCellNum();
+        Object[][] data = new Object[rownum - 1][colnum];
+        for (int i = 0; i < rownum - 1; i++) {
+            XSSFRow tempRow = worksheet.getRow(i + 1);
+            for (int j = 0; j < colnum; j++) {
+                if (tempRow == null)
+                    data[i][j] = "";
+                else {
+                    XSSFCell cell = tempRow.getCell(j);
+                    if (cell == null)
+                        data[i][j] = "";
+                    else {
+                        String value = new DataFormatter().formatCellValue(cell);
+                        data[i][j] = value;
+                    }
+                }
+            }
+        }
+        return data;
+    }
+
+    @BeforeMethod
     public void initializeDriver() {
-        driver = new WebDriverUtil().getDriver("FIREFOX");
+        driver = new WebDriverUtil().getDriver("CHROME");
     }
 
-    @Test
-    public void verifyHomeTownProduct() {
-        //open ‘https://www.hometown.in/’ in Firefox
-        driver.get(Environment.getValue("hometown.url"));
+    @Test(dataProvider = "getCompanyNames")
+    public void getCompanyInformation(String companyName) {
+        //open https://www.nseindia.com/ in Chrome
+        driver.get("https://www.nseindia.com/");
 
-        //Select Electronics from ‘More’ menu
-        HomeTownPage htPage = new HomeTownPage(driver);
-        htPage.clickElectronicsLink();
-        htPage.clickNoThanksButton();
+        //In the Equity window enter the company name
+        //Click on the magnifying glass or hit enter
+        NSEIndiaPage nseIndiaPage = new NSEIndiaPage(driver);
+        nseIndiaPage.searchEquity(companyName);
 
-        //From Filter, section select the color as ‘Black’
-        htPage.applyBlackColorFilter();
+        //Fetch and Print the following on the console
+        //1. Face Value
+        //2. 52 week high
+        //3. 52 week low
+        nseIndiaPage.waitForCompanyInfoToBeDisplayed();
+        System.out.println("Face Value : " + nseIndiaPage.getFacevalue());
+        System.out.println("52 week high : " + nseIndiaPage.get52WeekHigh());
+        System.out.println("52 week low : " + nseIndiaPage.get52WeekLow());
 
-        //When you go to the first product image, you will see Quick View option, click on that
-        htPage.clickQuickViewOfFirstProduct();
-
-        //Assert that product name contains Black in a name.
-        String actualProductText = htPage.getProductNameFromModal();
-        Assert.assertTrue("Product name does not contain the text BLACK. Product name:" +
-                actualProductText, actualProductText.contains("Black"));
-
-        //Close the Quick view window
-        htPage.closeModal();
-
-        //verify if Black is also present in Applied filters
-        Assert.assertTrue(" Black is not present in Applied filters. Filters:" +
-                htPage.getAppliedFilters(), htPage.getAppliedFilters().contains("Black"));
+        //Take screen shot of the searched equity
+        nseIndiaPage.takeScreenshot("./screenshots/Problem4_" + companyName + ".png");
     }
 
-    @After
+    @AfterMethod
     public void quitDriver() {
         driver.quit();
     }
-
 }

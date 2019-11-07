@@ -1,54 +1,56 @@
 package com.xpanxion.cpsat.assignments;
 
-import com.xpanxion.cpsat.configuration.Environment;
 import com.xpanxion.cpsat.driver.WebDriverUtil;
-import com.xpanxion.cpsat.pages.cii.CIIRegistrationPage;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import com.xpanxion.cpsat.pages.NSEIndiaPage;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.util.List;
 
 /*
-2) Using Junit and WebDriver script, open https://www.cii.in/OnlineRegistration.aspx in Firefox and do the below
-    1. Select “Number of Attendees” as 3
-    2. Assert the row count is 3
-    3. Select 1st-row title as ‘Admiral’(Please note use different method for every selection)
-    4. Select 2nd-row title as ‘CA’ (Please note use different method for every selection)
-    5. Select 3rd-row title as ‘CS’(Please note use different method for every selection)
-    6. Print all the options that are available in the title
+2) Using TestNG and WebDriver script, open https://www.nseindia.com/ in Google Chrome and do the below
+    a. Using FindElements method of webdriver get the advances, Declines and
+        Unchanged numbers from the maket watch window - reference image
+    b. Print the Minimum number
+        e.g. Unchanged 0
 */
 public class Problem2 {
     private WebDriver driver;
 
-    @Before
+    @BeforeMethod
     public void initializeDriver() {
-        driver = new WebDriverUtil().getDriver("FIREFOX");
+        driver = new WebDriverUtil().getDriver("CHROME");
     }
 
     @Test
-    public void verifyAttendees() {
-        //open https://www.cii.in/OnlineRegistration.aspx in Firefox
-        driver.get(Environment.getValue("cii.registration.url"));
+    public void getMininumOnNSEIndiaPage() {
+        //open https://www.nseindia.com/ in Google Chrome
+        driver.get("https://www.nseindia.com/");
 
-        //Select “Number of Attendees” as 3
-        CIIRegistrationPage registrationPage = new CIIRegistrationPage(driver);
-        registrationPage.selectNumberOfAttendee(3);
-        registrationPage.waitForNumOfAttendeeTableRowsToBe(3);
+        //get the advances, Declines and Unchanged numbers from the maket watch window
+        NSEIndiaPage nseIndiaPage = new NSEIndiaPage(driver);
+        List<WebElement> advancesInfo = nseIndiaPage.getAdvancesInfo();
+        int advances = Integer.parseInt(advancesInfo.get(0).getText());
+        int declines = Integer.parseInt(advancesInfo.get(1).getText());
+        int unchanged = Integer.parseInt(advancesInfo.get(2).getText());
 
-        //Select 1st-row title as ‘Admiral’ by using Value
-        registrationPage.selectAttendee1TitleByValue("Admiral");
-
-        //Select 2nd-row title as ‘CA’ by visible text
-        registrationPage.selectAttendee2TitleByVisibleText("CA");
-
-        //Select 3rd-row title as ‘CS’ using index
-        registrationPage.selectAttendee3TitleByIndex(18);
-
-        //Print all the options that are available in the title
-        System.out.println("Options in Title: " + registrationPage.getTitleOptions());
+        if (advances > declines) {
+            if (declines > unchanged)
+                System.out.println("Minimum number: Unchanged " + unchanged);
+            else
+                System.out.println("Minimum number: Declines " + declines);
+        } else {
+            if (advances > unchanged)
+                System.out.println("Minimum number: Unchanged " + unchanged);
+            else
+                System.out.println("Minimum number: Advances " + advances);
+        }
     }
 
-    @After
+    @AfterMethod
     public void quitDriver() {
         driver.quit();
     }

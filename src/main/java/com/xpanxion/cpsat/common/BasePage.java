@@ -1,17 +1,18 @@
 package com.xpanxion.cpsat.common;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Wait;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
 public class BasePage {
 
@@ -21,7 +22,7 @@ public class BasePage {
         this.driver = driver;
     }
 
-    protected Wait<WebDriver> getWait() {
+    private Wait<WebDriver> getWait() {
         return new FluentWait<>(driver)
                 .withTimeout(Duration.ofSeconds(20))
                 .pollingEvery(Duration.ofSeconds(1))
@@ -40,54 +41,37 @@ public class BasePage {
 
     protected void waitForElementsToBeVisible(By by) {
         getWait().until(ExpectedConditions.visibilityOfAllElementsLocatedBy(by));
-    }
-
-    protected WebElement waitForElementsToBeClickable(By by) {
-        getWait().until(ExpectedConditions.elementToBeClickable(by));
-        return driver.findElement(by);
-    }
-
-    protected boolean isElementPresent(By by) {
-        return driver.findElements(by).size() > 0;
-    }
-
-    public String getCurrentWindowHandle() {
-        return driver.getWindowHandle();
-    }
-
-    public void switchToNextWindow(String parentWindow) {
-        Set<String> windows = driver.getWindowHandles();
-        for (String window : windows) {
-            if (!window.equalsIgnoreCase(parentWindow)) {
-                driver.switchTo().window(window);
-                break;
-            }
-        }
-    }
-
-    public void switchToWindow(String parentWindow) {
-        Set<String> windows = driver.getWindowHandles();
-        for (String window : windows) {
-            if (window.equalsIgnoreCase(parentWindow)) {
-                driver.switchTo().window(window);
-                break;
-            }
-        }
-    }
-
-    public void waitForNumberOfWindowsToBe(int i) {
-        getWait().until(ExpectedConditions.numberOfWindowsToBe(i));
-    }
-
-    public String getPageTitle() {
-        return driver.getTitle();
+        driver.findElement(by);
     }
 
     protected JavascriptExecutor getJavaScriptExecutor() {
         return (JavascriptExecutor) driver;
     }
 
-    protected void scrollToCenter(By by) {
-        getJavaScriptExecutor().executeScript("arguments[0].scrollIntoView({block: 'center'});", waitForElement(by));
+    public boolean getResponseCode(String urlString) {
+        boolean isValid = false;
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.connect();
+            if (connection.getResponseCode() == 200) {
+                isValid = true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return isValid;
+    }
+
+    public void takeScreenshot(String filePath) {
+        File file = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+        try {
+            File destFile = new File(filePath);
+            destFile.delete();
+            FileUtils.copyFile(file, new File(filePath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

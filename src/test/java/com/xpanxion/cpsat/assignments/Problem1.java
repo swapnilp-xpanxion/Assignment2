@@ -1,71 +1,69 @@
 package com.xpanxion.cpsat.assignments;
 
-import com.xpanxion.cpsat.configuration.Environment;
 import com.xpanxion.cpsat.driver.WebDriverUtil;
-import com.xpanxion.cpsat.pages.meripustak.*;
-import org.openqa.selenium.Dimension;
+import com.xpanxion.cpsat.pages.ATAlliancePage;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.openqa.selenium.WebDriver;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 /*
-Using TestNG and WebDriver script, open https://www.meripustak.com/ in Google Chrome and do the below:
-    1. Print the width and height of the logo
-    2. Under Follow us section on the bottom, extract and print the href of ‘twitter’ social media
-    icon (Right a script in such a way, if the position of ‘twitter’ icon is changed tomorrow in the
-    social media icons, our script should work)
-    3. Click on the shopping cart when an item in the cart is 0
-    4. Assert the message in the shopping cart table “No Item is Added In Cart yet. Cart is
-    Empty!!!”
-    5. Add anyone java book in cart
-    6. Verify if this message exists in the shopping cart table “No Item is Added In Cart yet. Cart is
-    Empty!!!”
+1. Using Junit and WebDriver script, Go To http://agiletestingalliance.org/ in Google Chrome and do the below.
+    a. Click on the certification’s menu item
+    b. Count the number of certification icons visible on the page -
+       colour icons as per the below image. Total 12.
+      Print the URL every image is pointing to.
+    c. Confirm if the URL’s are working or not. If the URL is broken highlight that in a soft Assert
+    d. Take a screenshot
+    e. Hover on CP-CCT
+    f. Take a screenshot after hovering such that it shows the CP-CCT on the stored
+    screenshot image.
 */
 public class Problem1 {
     private WebDriver driver;
 
-    @BeforeMethod
+    @Before
     public void initializeDriver() {
         driver = new WebDriverUtil().getDriver("CHROME");
     }
 
     @Test
-    public void verifyMeriPustakAddToCart() {
-        //open https://www.meripustak.com/ in Google Chrome
-        driver.get(Environment.getValue("meripustak.url"));
+    public void verifyCertificationIcons() {
+        //Go To http://agiletestingalliance.org/ in Google Chrome
+        driver.get("http://agiletestingalliance.org/");
 
-        //Get and Print the width and height of the logo
-        MPHeaderPage header = new MPHeaderPage(driver);
-        Dimension size = header.getLogoDimension();
-        System.out.println("Logo Height : " + size.height);
-        System.out.println("Logo Width : " + size.width);
+        //Click on the certification’s menu item
+        ATAlliancePage atAlliancepage = new ATAlliancePage(driver);
+        atAlliancepage.clickCertificationMenu();
 
-        //print the href of ‘twitter’ social media icon
-        MPFooterPage footer = new MPFooterPage(driver);
-        System.out.println("Twitter Logo HREF : " + footer.getTwitterHref());
+        //Count the number of certification icons visible on the page
+        int certificationIconsCount = atAlliancepage.getCertificationIconsCount();
+        System.out.println("Certification Icons Count:" + certificationIconsCount);
 
-        //Click on the shopping cart
-        MPCartPage cartPage = header.goToCartPage();
+        //Print the URL every image is pointing to.
+        for (int index = 0; index < certificationIconsCount; index++) {
+            System.out.println(atAlliancepage.getCertificationIconsURLByIndex(index));
+        }
 
-        //Assert the message in the shopping cart table “No Item is Added In Cart yet. Cart is Empty!!!”
-        String actualText = cartPage.getCartEmptyMesage();
-        String expectedText = "No Item is Added In Cart yet.Cart is Empty!!!";
-        Assert.assertEquals(actualText, expectedText, "Empty Cart Message on page does not match expected message");
+        //Confirm if the URL’s are working or not.
+        // If the URL is broken highlight that in a soft Assert
+        for (int index = 0; index < certificationIconsCount; index++) {
+            Assert.assertTrue("Broken URL: " + atAlliancepage.getCertificationIconsURLByIndex(index),
+                    atAlliancepage.getResponseCode(atAlliancepage.getCertificationIconsURLByIndex(index)));
+        }
 
-        //Add anyone java book in cart
-        MPSearchPage searchPage = header.searchBook("Java Ee Applications On Oracle Java Cloud");
-        MPProductPage productPage = searchPage.waitForSearchResults()
-                .goToBookByName("Java Ee Applications On Oracle Java Cloud");
-        cartPage = productPage.clickAddToCart();
+        //Take a screenshot
+        atAlliancepage.takeScreenshot("./screenshots/Problem1-screenshot1.png");
 
-        //Verify if this message exists in the shopping cart table “No Item is Added In Cart yet. Cart is Empty!!!”
-        Assert.assertFalse(cartPage.isEmptyCartMessageDisplayed(), "" +
-                "Empty Cart message is displayed on the page.");
+        //Hover on CP-CCT
+        atAlliancepage.hoverOnCpCCT();
+
+        //Take a screenshot after hovering such that it shows the CP-CCT on the stored
+        atAlliancepage.takeScreenshot("./screenshots/Problem1-Hover-screenshot2.png");
     }
 
-    @AfterMethod
+    @After
     public void quitDriver() {
         driver.quit();
     }
