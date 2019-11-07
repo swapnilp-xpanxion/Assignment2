@@ -1,4 +1,4 @@
-# Assignment for Selenium CPSAT Challenge – 1
+# Assignment for Selenium CPSAT Challenge – 2
 
 ## Technology Stack
 * Java
@@ -6,3 +6,4 @@
 * Selenium
 * TestNG
 * Junit
+* Apache POI
